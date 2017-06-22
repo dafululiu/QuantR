@@ -1,0 +1,491 @@
+---
+title: "量化投资--Using R"
+subtitle: "前言"
+author: "罗智超 Rokia.org"
+date: "2017年6月20日"
+output:
+  beamer_presentation:
+    fig_height: 5.6
+    fig_width: 8
+    fonttheme: serif
+    highlight: tango
+    pandoc_args: --latex-engine=xelatex
+    slide_level: 2
+    theme: CambridgeUS
+    toc: yes
+institution: WISE
+header-includes:
+- \usepackage{xeCJK}
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r,echo=FALSE,comment=FALSE,message=FALSE}
+#install.packages("quantmod")
+#install.packages("quantstrat", 
+#repos = "http://R-Forge.R-project.org")
+
+library(quantmod)
+```
+
+# 什么是R语言
+
+## 数据分析领域的“小李飞刀”
+
+- MATLAB, Eviews, Stata, Gauss, Fortran, SAS，R
+
+- C, C#, C++, Java, Python, JavaScript, Nodejs
+
+- R: 一个免费开源、能够自由有效地用于统计计算和绘图的语言和环境
+
+## 两个小例子感受R语言的魅力(绘图)
+
+
+```{r,echo=FALSE}
+
+#getSymbols("IBM",src="yahoo")
+#save(IBM,file = "data/IBM.rda")
+load("data/IBM.rda")
+chartSeries(IBM,subset="2017",
+            theme = "white",
+            type = "candles")
+
+```
+
+## 两个小例子感受R语言的魅力(Cont'd)
+
+- 上张ppt的图就是由下面两行代码生成的
+
+```{r,eval=FALSE}
+#getSymbols("IBM",src="yahoo")
+chartSeries(IBM ,subset="2017",
+            theme = "white",type = "candles")
+
+
+```
+
+## 两个小例子感受R语言的魅力(Cont'd)
+
+- 如果我想加两条移动平均如何？
+
+```{r,eval=FALSE}
+
+addSMA(n=c(5,20))
+
+```
+
+## 两个小例子感受R语言的魅力(Cont'd)
+
+```{r,echo=FALSE}
+addSMA(n=c(5,20))
+```
+
+
+## 两个小例子感受R语言的魅力(Rmd)
+
+- 传统的分析报告PPT:Copy+Paste
+
+- 文艺化编程:文字+分析代码
+
+- 交互式探索分析shiny::runApp("095-plot-interaction-advanced")
+
+
+# 安装Rstudio & R
+
+## 安装Rstudio
+
+- www.rstudio.com
+
+## 安装R
+
+- www.r-project.org 3.4.x
+
+## 安装Package
+
+- tools-global options-packages- cran mirror
+- packages-install
+
+- command
+
+```{r}
+#install.packages("quantmod")
+#install.packages("quantstrat", 
+#repos = "http://R-Forge.R-project.org")
+#library(devtools)
+#install_github("hadley/ggplot2")
+#https://github.com/hadley/
+
+```
+
+# 为什么R适合量化投资分析
+
+## R语言有众多强大的时间处理函数
+
+```{r,eval=FALSE}
+library(zoo)
+library(xts)
+library(lubridate)
+library(chron)
+library(timeDate)
+```
+
+
+## R语言的向量运算是很多编程语言无法比拟的
+
+```{r,eval=FALSE}
+#使用向量方法计算交易信号及累计收益率
+#计算交易信号 
+ ds$ma1<-c(rep(NA,ma1-1),rollmean(ds$Close,ma1))
+ ds$ma2<-c(rep(NA,ma2-1),rollmean(ds$Close,ma2))
+ a<-sign(ds$ma1-ds$ma2)
+ ds$signal<-c(NA,diff(a))
+#计算累计收益率
+ ds$s<-ifelse(ds$signal==-2,-1,ifelse(ds$signal==2,1,0))
+ ds$s<-cumsum(ds$s)
+ ds$r<-diff(ds$Close)/ds$Close
+ ds$rTrade<-cumprod(1+ds$s*ds$r)
+```
+
+## R语言有海量的统计、机器学习算法包
+
+```{r,eval=FALSE}
+library(e1071)
+library(rpart)
+library(caret)
+library(MXNetR)
+library(darch)
+library(deepnet)
+library(h2o)
+```
+
+
+## R语言+Rcpp使R的应用无限可能
+
+- 量化金融领域有大量算法是由C++实现的
+
+- Rcpp提供了R语言与C++的无缝连接
+
+- CRAN上面有超过1千个PACKAGE依赖Rcpp
+
+- 《Rcpp: seamless R and C++ integration》
+
+## R语言金融数据库接口
+
+
+```{r,eval=FALSE}
+#WindR
+library(WindR)
+w.start()
+#GTA by JDBC
+
+#Yahoo...
+library(quantmod)
+getSymbols("IBM",src="yahoo")
+```
+
+## R语言金融数据库接口(Cont'd)
+![WindR](image/windr.png)
+
+## 大数据也有R语言的一席之地
+
+```{r,eval=FALSE}
+library(rhadoop)
+library(rhive)
+library(SparkR)
+library(sparklyr)
+
+```
+
+
+## 大数据也有R语言的一席之地(Cont'd)
+
+![Rstudio Sparklyr](image/sparkr.png)
+
+## 谁说业界不用R
+
+- 微软收购Revolution,将其产品整合至MS SQL
+
+- Oracle在其Advanced Analytics产品中集成R语言
+
+- 主流深度学习的产品都提供R API
+
+
+
+
+# R语言在量化投资分析中的应用框架
+
+## 何为量化投资？
+
+- 百度百科：量化投资是指通过数量化方式及计算机程序化发出买卖指令，以获取稳定收益为目的的交易方式。
+
+
+- 个人理解：综合运用数据、模型和算法来计算、优化、验证投资逻辑有效性的概率水平。
+
+
+## 量化投资分析的几点个人思考
+
+- 价值投资、技术分析、专家直觉本质上都是不冲突的，都是从不同的角度论证自己的投资逻辑
+
+- 量化投资比拼的是不对称信息处理的速度与能力
+
+- “金融即数据”，比拼的还有数据的广度
+
+- 开源社区带来的思考：单兵做战年代已经不再
+
+- 家家都在制造“轮子”：基础分析数据平台的整合还有很长的路要走，但是有很多第三方平台。如：[RiceQuant](https://www.ricequant.com/)
+
+
+## R语言量化工具包
+
+
+![R语言量化工具包](image/quantR.png)
+
+## R语言量化工具包(Cont'd)
+
+- 数据管理：包括数据集抓取、存储、读取、时间序列、数据处理等，涉及R包有 zoo(时间序列对象), xts(时间序列处理), timeSeries(Rmetrics系时间序列对象) timeDate(Rmetrics系时间序列处理), data.table(数据处理), quantmod(数据下载和图形可视化), RQuantLib(QuantLib数据接口), WindR(Wind数据接口), RJDBC(数据库访问接口), rhadoop(Hadoop访问接口), rhive(Hive访问接口), rredis(Redis访问接口), rmongodb(MongoDB访问接口), SparkR(Spark访问接口),fImport(Rmetrics系数据访问接口)等。
+
+## R语言量化工具包(Cont'd)
+
+- 指标计算：包括金融市场的技术指标的各种计算方法，涉及R包有 TTR(技术指标), TSA(时间序列计算), urca(单位根检验), fArma(Rmetrics系ARMA计算), fAsianOptions(Rmetrics系亚洲期权定价), fBasics(Rmetrics系计算工具), fCopulae(Rmetrics系财务分析), fExoticOptions(Rmetrics系期权计算), fGarch(Rmetrics系Garch模型), fNonlinear(Rmetrics系非线模型), fOptions(Rmetrics系期权定价), fRegression(Rmetrics系回归分析), fUnitRoots(Rmetrics系单位根检验) 等。
+
+- rmetrics.org
+
+## R语言量化工具包(Cont'd)
+
+- 回测交易：包括金融数据建模，并验证用历史数据验证模型的可靠性，涉及R包有 FinancialInstrument(金融产品), quantstrat(策略模型和回测), blotter(账户管理), fTrading(Rmetrics系交易分析)等。
+
+## R语言量化工具包(Cont'd)
+
+- 投资组合：对多策略或多模型进行管理和优化，涉及R包有 PortfolioAnalytics(组合分析和优化), stockPortfolio(股票组合管理), fAssets(Rmetrics系组合管理)等
+
+## R语言量化工具包(Cont'd)
+
+- 风险管理：对持仓进行风险指标的计算和风险提示，涉及R包有 PerformanceAnalytics(风险分析),fPortfolio(Rmetrics系组合优化), fExtremes(Rmetrics系数据处理)等。
+
+## R语言量化研究框架
+
+
+![R语言量化研究框架](image/quantR_2.png)
+
+
+
+# Level2高频交易数据分析举例
+
+## Level2数据库表内容
+
+- 个股期权：个股期权静态信息、个股期权分笔数据、个股期权分时数据
+
+- 股指期货：股指期货分笔数据、股指期货分时数
+据
+
+- 国债期货：国债期货分笔交易数据、国债期货分时交易数据
+
+- 商品期货：商品期货分笔数据、商品期货委 托统计行情、商品期货实时结算行情、商品期货分价成交量行情、商品期货套利深度行情
+
+- 沪深股票：指数行情、逐笔成交、十档行情、集合竞价、委托
+
+## Level2数据库表内容(Cont'd)
+
+![逐笔交易表1](image/table_trade1.png)
+
+## Level2数据库表内容(Cont'd)
+
+![逐笔交易表2](image/table_trade2.png)
+
+## Level2数据库表数据容量
+
+- 存储方式：MSSQL
+
+- 同步方式：收盘后推送数据文件，解压后插入数据库库表
+
+- 同步时间：收盘后更新，凌晨5点前可以更新完全
+
+- 数据量：1年10T，1天50G左右
+
+
+
+## 沪深股票逐笔成交数据分析
+
+![Level2净流入](image/level2.png)
+
+## 沪深股票逐笔成交数据分析(Cont'd)
+
+- 问题来源:单纯给我一天的“饼图”意义不大，如同感受今天的天气要与前一天的进行比较。我需要一段时间的不同规模的资金净流入情况如何？这几个月不同规模的买卖单资金占比分布变化如何？另外，不同的股票使用同一个大单划分标准是否合理？
+
+## 沪深股票逐笔成交数据分析(Cont'd)
+
+```{r,eval=FALSE}
+   qp<-seq(0.8,1,0.01)
+    colnames(ds)[names(ds) == side] <- "ORDERNO"
+    ds_sOrder <- ds %>% 
+      group_by(TRDDATE,ORDERNO) %>% 
+      summarise(
+        tmSum=sum(TRDMONEY,na.rm=T)) %>%
+      arrange(TRDDATE,tmSum) %>%   
+      group_by(TRDDATE)%>%
+      mutate(tmCSum=cumsum(tmSum),
+      sumP=round(tmCSum/sum(tmSum),4),
+      quan=findInterval(tmSum,quantile(tmSum,qp),
+      rightmost.closed = TRUE)
+      )
+
+```
+
+## 沪深股票逐笔成交数据分析(Cont'd)
+
+![5万以下](image/50000.png)
+
+## 沪深股票逐笔成交数据分析(Cont'd)
+![5-10万](image/100000.png)
+
+## 沪深股票逐笔成交数据分析(Cont'd)
+![10-50万](image/500000.png)
+
+## 沪深股票逐笔成交数据分析(Cont'd)
+
+![每单交易金额分位图](image/order_money.png)
+
+
+## 沪深股票逐笔成交数据分析(Cont'd)
+![每单交易金额占比分位图](image/order_sump.png)
+
+## 沪深股票逐笔成交数据分析(Cont'd)
+![每单交易累计金额占比分位图](image/order_Csum.png)
+
+
+# R语言(数据分析)学习路径
+
+## R语言(数据分析)学习工具篇
+
+- 换Mac(Option)
+
+- 个人使用Rstudio,内网可以使用Rstudio Server(Free)
+
+## R语言(数据分析)学习教材篇
+
+网盘
+
+- 教材下载地址(注：所有电子图书资料都收集自互联网)： https://pan.baidu.com/s/1kUZmrEf 密码: ty8m 
+
+入门
+
+- 《An Introduction to R》 by Bill Venables & David Smith
+
+数据操纵
+
+- 《Data Manipulation With R》 by Phil Spector
+
+绘图
+
+- 《ggplot2: Elegant Graphics for Data Analysis》 by Hadley Wickham
+
+## R语言(数据分析)学习教材篇(Cont'd)
+
+高级
+
+- 《Advanced R》 by Hadley Wickham
+
+统计思维
+
+-《The Lady Tasting Tea show Statistics Revolutionized Science in the Twentieth Century》
+
+-《统计学：从数据到结论》by 吴喜之
+
+我的课件地址
+
+- 《量化投资Using R 》https://github.com/zhichaoluo/quantR
+
+- 《Data Analysis课件》https://github.com/zhichaoluo/dataanalysis
+
+- 《Advanced R 讨论组课件》https://github.com/zhichaoluo/AdvancedR
+
+
+
+
+## R语言(数据分析)学习软件包篇
+
+```{r,eval=FALSE}
+# 数据处理
+library(dplyr)
+library(data.table)
+# 绘图
+library(ggplot2)
+#时间序列
+library(zoo)
+library(xts)
+
+```
+
+
+
+##数据分析VS烹小鲜
+
+“哥哥，R语言(数据分析)咋学呢？”
+
+
+![R语言(数据分析)](image/feng_question.jpg)
+
+
+## 数据分析VS烹小鲜(Cont'd)
+
+“哥哥先带你去取数据”
+![取数据](image/feng_aquire.png)
+
+##数据分析VS烹小鲜(Cont'd)
+
+如果唐嫣神仙妹妹陪我获取数据，再多的数据俺也不觉得累！
+
+##数据分析VS烹小鲜(Cont'd)
+
+“妹纸，哥哥这才是主数据”
+![取主数据](image/feng_import2.png)
+
+##数据分析VS烹小鲜(Cont'd)
+
+“妹纸，你说我用R还是SAS呢？”
+
+![工具选择](image/feng_SASorR.png)
+
+##数据分析VS烹小鲜(Cont'd)
+
+“妹纸，早知道不用SAS了，你早该推荐使用R啊”
+
+![工具选择](image/feng_SASorR2.png)
+
+##数据分析VS烹小鲜(Cont'd)
+
+“妹纸，数据预处理，不仅是体力活，还是个精细活，学着点啊”
+
+![数据预处理](image/feng_chop.png)
+
+##数据分析VS烹小鲜(Cont'd)
+
+“妹纸，我建模型的时候是不是很帅气啊！”
+![模型构建](image/feng_model.png)
+
+##数据分析VS烹小鲜(Cont'd)
+
+“参数调整的时候也帅！”
+![参数调整](image/feng_parameter.png)
+
+##数据分析VS烹小鲜(Cont'd)
+
+“建模完成撰写分析报告虽然烧脑但也难掩帅气！”
+![报告撰写](image/feng_decorate.png)
+
+##数据分析VS烹小鲜(Cont'd)
+
+“总结：只有掌握好R语言(数据分析)，才能和PPMM分享甜蜜成果！”
+![成果分享](image/feng_enjoy.png)
+
+##数据分析VS烹小鲜(Cont'd)
+
+“童鞋，你想多了，你的厨房还在这里！”
+![真实的后厨](image/kitchen.png)
+
+## 结束
+
+![谢谢！](image/thankyou.png)
